@@ -22,8 +22,13 @@ def main() -> None:
     if not (skill_dir / "SKILL.md").is_file():
         parser.error(f"No existe {skill_dir / 'SKILL.md'}")
 
-    files = sorted(path for path in skill_dir.rglob("*") if path.is_file())
     output_dir = args.output_dir.resolve()
+    if output_dir == skill_dir or skill_dir in output_dir.parents:
+        parser.error("La salida debe quedar fuera de la carpeta fuente de la skill.")
+    entries = list(skill_dir.rglob("*"))
+    if any(path.is_symlink() for path in entries):
+        parser.error("La skill contiene un enlace simbólico; revisarlo antes de empaquetar.")
+    files = sorted(path for path in entries if path.is_file())
     output_dir.mkdir(parents=True, exist_ok=True)
     archive = output_dir / f"{args.slug}.zip"
     with ZipFile(archive, "w", ZIP_DEFLATED) as bundle:
